@@ -10,8 +10,11 @@ config = {
             "dir": os.path.join(PROJECT_ROOT, 'dataset/Drama_Dataset'),
             "n_frame": 5,  # number of frames retrieved for each data
             "frame_selection_method": "random",  # frame selection method [choose from: 'random']
+
+            # Caching Options (Text Embeddings and Image Feature Extraction)
             "use_cache": True,  # If True, preprocess text and store as cache, else, process text during runtime
-            "text_embedding": "bert_pretrained"  # text embedder [choose from: 'bert_pretrained']
+            "text_embedding": "bert_pretrained",  # text embedder [choose from: 'bert_pretrained']
+            "image_feature_extraction": "None"  # image feature extraction method [choose from: 'None']
         }
     }
 }
