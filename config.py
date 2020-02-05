@@ -1,3 +1,7 @@
+"""
+Settings are defined here
+"""
+
 import os
 from munch import DefaultMunch
 
@@ -13,7 +17,7 @@ config = {
 
             # Caching Options (Text Embeddings and Image Feature Extraction)
             "use_cache": True,  # If True, preprocess text and store as cache, else, process text during runtime
-            "text_embedding": "bert_pretrained",  # text embedder [choose from: 'bert_pretrained']
+            "text_embedding_name": "bert_pretrained",  # text embedder [choose from: 'bert_pretrained']
             "image_feature_extraction": "None"  # image feature extraction method [choose from: 'None']
         }
     }
