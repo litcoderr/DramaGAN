@@ -4,18 +4,65 @@ Core Drama Dataset Objects are defined here
 
 
 import os
+import random
 import pickle
 import pathlib
 from tqdm import tqdm
+from PIL import Image
+
+import torch
 import torch.utils.data as data
+from torchvision import transforms
 
 from dataset.utils import parse_json
 from dataset.preprocess import TextPreprocessor
 
 
+def custom_collate(batch):
+    """
+    custom collate function for data_loader.
+    Parameters
+    ----------
+    batch: list
+        list of data retrieved from dataset object. length of batch size
+    Return
+    ------
+    batch: tuple
+        tuple of two elements(image_batch, text_batch).
+        text_batch: list[image_list] -> length: batch_size
+            image_list: list[image_vector] -> length: image_seq_length
+                image_vector: FloatTensor -> shape: [channel(3), width, height]
+        image_batch: list[text_vector] -> length: batch_size
+            text_vector: FloatTensor -> shape: [seq, dimension] (description representation vector)
+    """
+    # list of vector of shape: [text_seq_length, dimension] (description representation vector)
+    text_batch = list(map(lambda batch_data: batch_data[0]['description_vector'], batch))
+
+    # list of vector of shape: [1, image_seq_length, channel, width, height]
+    image_batch = list(map(lambda batch_data: batch_data[1], batch))
+
+    return text_batch, image_batch
+
+
+def preprocess_batch(config, text, images):
+    """
+    Parameters
+    ----------
+    text: list[text_vector] -> text_vector shape: [text_seq_length, dimension]
+    images: list[list[image_vector]] -> image_vector shape: [channel(3), width, height]
+    Returns
+    -------
+    text: FloatTensor shape: [batch_size, image_seq_length, dimension]
+    images: FloatTensor shape: [batch_size, image_seq_length, channel(3), width, height]
+    """
+    text = torch.stack(list(map(lambda text_vector: text_vector.to(config.train_settings.device).mean(0).unsqueeze(0).expand(config.dataset.drama_dataset.n_frame, -1).clone(), text)), dim=0)
+    images = torch.stack(list(map(lambda image_list: torch.stack(list(map(lambda image: image.to(config.train_settings.device), image_list)), dim=0), images)), dim=0)
+    return text, images
+
+
 def get_image_dirs(config, datum):
     """
-        Get all directory containing images (there can be multiple dirs when data type is 'scene')
+    Get all directory containing images (there can be multiple dirs when data type is 'scene')
     """
     image_root = os.path.join(config.dir, 'AnotherMissOh_images')
 
@@ -83,16 +130,31 @@ class TextLoader(data.Dataset):
 
         # Initialize Text Preprocessor (for bert embedding)
         self.preprocessor = TextPreprocessor(model_name=self.config.text_embedding_name)
+        self.cache_root = os.path.join(self.config.dir, 'Cache', 'text', mode)  # cache root directory
 
         if self.config.use_cache:
-            # Check if cache exists. If not, generate cache and retrieve directory root
-            self.text_cache_root = self.gen_cache(self.config, self.mode, self.filtered_data)
+            # Check if cache exists. If not, generate cache and retrieve cache directory
+            self.gen_cache(self.filtered_data)
+            self.preprocessor.delete()  # Unload model from GPU when finished
 
     def __len__(self):
-        pass
+        return len(self.filtered_data)
 
     def __getitem__(self, index):
-        pass
+        data = self.filtered_data[index]
+
+        if self.config.use_cache:
+            cache_path = self.get_cache_name(data)
+            if not os.path.exists(cache_path):
+                self.save_cache(data)
+
+            with open(cache_path, 'rb') as file:
+                processed_data = pickle.load(file)
+        else:
+            processed_data = self.preprocess(data)
+
+        data.update(processed_data)
+        return data
 
     def preprocess(self, datum):
         """
@@ -107,28 +169,31 @@ class TextLoader(data.Dataset):
             Dictionary containing embedding vector of "description" and QA "answers"
         """
         processed_datum = {
-            "description": self.preprocessor.get_embedding(datum['description']).cpu().detach().numpy(),
-            "answers": list(map(lambda ans: self.preprocessor.get_embedding(ans).cpu().detach().numpy(), datum['answers']))
+            "description_vector": self.preprocessor.get_embedding(datum['description']).cpu().detach().numpy(),
+            "answers_vector": list(map(lambda ans: self.preprocessor.get_embedding(ans).cpu().detach().numpy(), datum['answers']))
         }
 
         return processed_datum
 
-    def gen_cache(self, config, mode, filtered_data):
+    def gen_cache(self, filtered_data):
         """
         Generate cache if not exist.
         """
-        cache_root = os.path.join(config.dir, 'Cache', 'text', mode)  # cache root directory
-        if not os.path.exists(cache_root):  # Check if cache dir exists. If not, preprocess text and store as pickle
-            pathlib.Path(cache_root).mkdir(parents=True, exist_ok=True)
+        if not os.path.exists(self.cache_root):  # Check if cache dir exists. If not, preprocess text and store as pickle
+            pathlib.Path(self.cache_root).mkdir(parents=True, exist_ok=True)
             for datum in tqdm(filtered_data):
-                pickle_path = os.path.join(cache_root, '{absolute_id}.pickle'.format(absolute_id=str(datum['absolute_id'])))
-                processed_datum = self.preprocess(datum=datum)
+                self.save_cache(datum)
 
-                # Save processed_datum as pickle
-                with open(pickle_path, 'wb') as file:
-                    pickle.dump(processed_datum, file)
+    def save_cache(self, datum):
+        pickle_path = self.get_cache_name(datum)
+        processed_datum = self.preprocess(datum=datum)
 
-        return cache_root
+        # Save processed_datum as pickle
+        with open(pickle_path, 'wb') as file:
+            pickle.dump(processed_datum, file)
+
+    def get_cache_name(self, datum):
+        return os.path.join(self.cache_root, '{absolute_id}.pickle'.format(absolute_id=str(datum['absolute_id']).zfill(10)))
 
 
 class ImageLoader(data.Dataset):
@@ -138,10 +203,41 @@ class ImageLoader(data.Dataset):
         self.filtered_data = filtered_data
 
     def __len__(self):
-        pass
+        return len(self.filtered_data)
 
     def __getitem__(self, index):
-        pass
+        image_dirs = get_image_dirs(self.config, datum=self.filtered_data[index])
+        images = []
+        for image_dir in image_dirs:
+            images += [os.path.join(image_dir, image_name) for image_name in os.listdir(image_dir) if image_name.endswith('jpg')]
+        images = self.select_images(images, self.config)
+        images = list(map(lambda image_name: Image.open(image_name).resize(self.config.img_resize), images))
+        return images
+
+    @staticmethod
+    def select_images(images, config):
+        if config.frame_selection_method == 'random':
+            index = [0]
+            selected_images = []
+
+            images_len = len(images)
+            seq_len = images_len // config.n_frame
+            remainder = images_len % config.n_frame
+
+            start_index = 0
+            for _ in range(remainder):
+                start_index += seq_len + 1
+                index.append(start_index)
+            for _ in range(config.n_frame-remainder):
+                start_index += seq_len
+                index.append(start_index)
+
+            for i in range(config.n_frame):
+                interval = index[i+1] - index[i]
+                temp_index = index[i] + random.randint(0, interval-1)
+                selected_images.append(images[temp_index])
+
+        return selected_images
 
 
 class DramaDataset(data.Dataset):
@@ -157,6 +253,7 @@ class DramaDataset(data.Dataset):
         mode : str
             dataset mode. Choose from ["train", "test", "val"]
         """
+        self.train_settings = config.train_settings
         self.config = config.dataset.drama_dataset  # drama dataset configuration info
 
         # Parse JSON file (containing video info, subtitle, and QA)
@@ -165,10 +262,33 @@ class DramaDataset(data.Dataset):
         json_parsed = parse_json(json_file_path)
 
         self.text_loader, self.image_loader = init_loader(self.config, mode=mode, parsed_data=json_parsed)
-        pass
 
     def __len__(self):
-        pass
+        return len(self.text_loader)
 
     def __getitem__(self, index):
-        pass
+        """
+        Parameters
+        ----------
+        index: int
+            data index
+        Returns
+        -------
+        text: list
+            list of text data(dict)
+        images: list
+            list of image vector(FloatTensor)
+        """
+        text = self.text_loader[index]
+        images = self.image_loader[index]
+
+        # Text Numpy Vector to Tensor
+        text['description_vector'] = torch.FloatTensor(text['description_vector']).squeeze(0)
+        text['answers_vector'] = list(map(lambda answer: torch.FloatTensor(answer)
+                                          , text['answers_vector']))
+
+        # PIL image to Tensor
+        images = list(map(lambda image: transforms.ToTensor()(image)
+                          , images))
+
+        return text, images

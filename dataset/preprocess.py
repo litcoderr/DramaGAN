@@ -27,6 +27,10 @@ class TextPreprocessor:
         output_tensor = output_tensor[0]  # Returning only last hidden state
         return output_tensor
 
+    def delete(self):
+        del self.tokenizer
+        del self.model
+
 
 if __name__ == '__main__':
     processor = TextPreprocessor('bert_pretrained')
