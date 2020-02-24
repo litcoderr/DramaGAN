@@ -33,7 +33,11 @@ config = {
     },
     "model": {
         "storygan": {
-
+            "img_size": 256,
+            "text_dim": 768,
+            "text_hidden_dim": 75,
+            "noise_dim": 75,
+            "gen_channel": 192 * 8
         }
     }
 }
