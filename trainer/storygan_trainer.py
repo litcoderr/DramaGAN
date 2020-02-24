@@ -58,6 +58,7 @@ class StoryGanTrainer(Trainer):
                 ############# FEED FORWARD ############
                 # 2-1. Generate Single Image
                 generated_image = self.model.sample_images(desc=image_description, context=image_context)
+                generated_video = self.model.sample_video(desc=video_description, context=video_context)
                 pass
 
     def sample_image_batch(self):
