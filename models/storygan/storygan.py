@@ -121,15 +121,22 @@ class StoryGan(nn.Module):
         """
         :param desc: Torch.FloatTensor shape: [batch_size, seq_length, text_dim(768)]
         :param context: Torch.FloatTensor shape: [batch_size, text_dim(768)]
-        :return: Torch.FloatTensor shape: [batch_size, 3, seq_length,img_size(256), 256]
+        :return:
+            result_image: Torch.FloatTensor shape: [batch_size, 3, seq_length,img_size(256), 256]
+            c_mu: Torch.FloatTensor shape: [batch_size, text_dim(75)]
+            c_logvar: Torch.FloatTensor shape: [batch_size, text_dim(75)]
+            desc_mu: Torch.FloatTensor shape: [batch_size*seq_length, text_dim(75)]
+            desc_logvar: Torch.FloatTensor shape: [batch_size*seq_length, text_dim(75)]
         """
         # 1. Encode description and context dim(768) -> dim(75)
         desc = self.fc_text_encode(desc)
         context = self.fc_text_encode(context)
+        c_mu, c_logvar = context, context  # shape: [batch_size, text_hidden_dim(75)]
 
         # 2-1. Encode description and context through GRU
         # shape: [batch_size * seq_length, text_hidden_dim(75)]
         z_desc_context = self.desc_context_rnn(desc, context)
+
 
         # 2-2. Sample desc and context using VAE
         # first reshape context and desc
@@ -186,7 +193,7 @@ class StoryGan(nn.Module):
                                          self.dataset_config.n_frame,
                                          3, self.model_config.img_size, self.model_config.img_size)
         result_video = result_video.permute(0, 2, 1, 3, 4)
-        return result_video
+        return result_video, c_mu, c_logvar, desc_mu, desc_logvar
 
     def sample_images(self, desc, context):
         """
@@ -195,7 +202,9 @@ class StoryGan(nn.Module):
         :param context: Torch.FloatTensor shape: [batch_size, text_dim(768)]
             Contextual vector representation (mean vector of text vectors of each scene)
         :return:
-            generated_image: Torch.FloatTensor shape: [batch_size, channel(3), img_size(256), img_size(256)]
+            result_image: Torch.FloatTensor shape: [batch_size, channel(3), img_size(256), img_size(256)]
+            desc_mu: Torch.FloatTensor shape: [batch_size, text_dim(768)]
+            desc_logvar: Torch.FloatTensor shape: [bath_size, text_dim(768)]
         """
 
         # 1. Encode description and context dim(768) -> dim(75)
@@ -250,4 +259,4 @@ class StoryGan(nn.Module):
         img_hidden = self.upblock6(img_hidden)
         result_image = self.conv_block(img_hidden)
 
-        return result_image
+        return result_image, desc_mu, desc_logvar

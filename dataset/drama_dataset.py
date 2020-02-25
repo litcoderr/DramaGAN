@@ -150,6 +150,7 @@ class TextLoader(data.Dataset):
 
             with open(cache_path, 'rb') as file:
                 processed_data = pickle.load(file)
+                file.close()
         else:
             processed_data = self.preprocess(data)
 
@@ -191,6 +192,7 @@ class TextLoader(data.Dataset):
         # Save processed_datum as pickle
         with open(pickle_path, 'wb') as file:
             pickle.dump(processed_datum, file)
+            file.close()
 
     def get_cache_name(self, datum):
         return os.path.join(self.cache_root, '{absolute_id}.pickle'.format(absolute_id=str(datum['absolute_id']).zfill(10)))

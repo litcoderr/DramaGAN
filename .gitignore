@@ -129,4 +129,5 @@ dmypy.json
 .pyre/
 
 Drama_Dataset/
+pretrained/
 .idea/

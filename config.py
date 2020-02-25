@@ -10,13 +10,21 @@ PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 #  Store every settings here
 config = {
     "train_settings": {  # Set Training settings here
+        "root": PROJECT_ROOT,
         "dataset": "drama_dataset",  # dataset name (refer below 'dataset' section)
         "model": "storygan",  # model name (refer below 'model' section)
         "mode": "train",  # Choose from ['train', 'test', 'val']
         "batch_size": 10,  # batch size
         "num_workers": 5,  # number of workers
         "n_epoch": 100,  # number of epochs
-        "device": 'cuda'  # Choose from ['cuda', 'cpu']
+        "device": 'cuda',  # Choose from ['cuda', 'cpu']
+        "d_lr": 0.0002,  # Discriminator Learning Rate
+        "g_lr": 0.0002,  # Generator Learning Rate
+        "g_n_step": 2,  # Number of generator step per iteration
+        "vid_loss_ratio": 1.0,  # video loss ratio
+        "log_cycle": 50,  # train loss logging cycle
+        "save_cycle": 500,  # saving model cycle
+        "load_pretrained": None # {"epoch": 0, "iteration": 9},  # loading pre-trained # None if train from beginning
     },
     "dataset": {
         "drama_dataset": {
@@ -38,7 +46,9 @@ config = {
             "text_hidden_dim": 75,
             "noise_dim": 75,
             "gen_channel": 192 * 8,
-            "latent_img_dim": 15
+            "dis_channel": 96,
+            "latent_img_dim": 15,
+            "label_num": 2
         }
     }
 }
