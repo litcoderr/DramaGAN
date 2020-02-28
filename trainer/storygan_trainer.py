@@ -122,8 +122,13 @@ class StoryGanTrainer(Trainer):
         video_fake_labels = torch.FloatTensor(self.config.train_settings.batch_size).fill_(0).to(self.config.train_settings.device)
 
         print('start traing @ epoch: {} step: {}'.format(self.before_epoch, self.before_step+1))
+        step_index = self.before_step
         for epoch in range(self.before_epoch, self.config.train_settings.n_epoch):
-            for step_index in range(self.before_step+1, self.n_step):
+            while True:
+                step_index += 1
+                if step_index == self.n_step:
+                    step_index = -1
+                    break
                 try:
                     video_description, video = next(self.video_batch_iterator)
                 except StopIteration:
@@ -179,6 +184,8 @@ class StoryGanTrainer(Trainer):
                 ############# UPDATE GENERATOR ############
                 # Perform twice for generator and discriminator balance
                 for _ in range(self.config.train_settings.g_n_step):
+                    self.model.zero_grad()
+
                     generated_image, img_desc_mu, img_desc_logvar = self.model.sample_images(desc=image_description,
                                                                                              context=image_context)
                     generated_video, vid_c_mu, vid_c_logvar, vid_desc_mu, vid_desc_logvar = self.model.sample_video(

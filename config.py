@@ -15,16 +15,16 @@ config = {
         "model": "storygan",  # model name (refer below 'model' section)
         "mode": "train",  # Choose from ['train', 'test', 'val']
         "batch_size": 10,  # batch size
-        "num_workers": 5,  # number of workers
+        "num_workers": 0,  # number of workers; 0 recommended to prevent shared memory error
         "n_epoch": 100,  # number of epochs
         "device": 'cuda',  # Choose from ['cuda', 'cpu']
         "d_lr": 0.0002,  # Discriminator Learning Rate
         "g_lr": 0.0002,  # Generator Learning Rate
         "g_n_step": 2,  # Number of generator step per iteration
         "vid_loss_ratio": 1.0,  # video loss ratio
-        "log_cycle": 50,  # train loss logging cycle
+        "log_cycle": 10,  # train loss logging cycle
         "save_cycle": 500,  # saving model cycle
-        "load_pretrained": None # {"epoch": 0, "iteration": 9},  # loading pre-trained # None if train from beginning
+        "load_pretrained": {"epoch": 35, "iteration": 999},  # loading pre-trained # None if train from beginning
     },
     "dataset": {
         "drama_dataset": {
