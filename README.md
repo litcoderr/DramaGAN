@@ -18,3 +18,13 @@ Long Image Sequence Generation from Text
 ```bash
 python train.py
 ```
+
+## StoryGAN Result
+| Real Images | Generated Images |
+:-------------------------:|:-------------------------:
+<img src="./imgs/train_13_0_real.jpg" width="200"/> | <img src="./imgs/train_13_0_fake.jpg" width="200"/> 
+<img src="./imgs/train_13_1_real.jpg" width="200"/> | <img src="./imgs/train_13_1_fake.jpg" width="200"/> 
+<img src="./imgs/train_13_2_real.jpg" width="200"/> | <img src="./imgs/train_13_2_fake.jpg" width="200"/> 
+<img src="./imgs/train_13_3_real.jpg" width="200"/> | <img src="./imgs/train_13_3_fake.jpg" width="200"/> 
+<img src="./imgs/train_13_4_real.jpg" width="200"/> | <img src="./imgs/train_13_4_fake.jpg" width="200"/> 
+
