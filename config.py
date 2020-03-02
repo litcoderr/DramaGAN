@@ -28,7 +28,7 @@ config = {
     },
     "inference_settings": {
         "root": os.path.join(PROJECT_ROOT, 'result'),  # where results are stored
-        "pretrained": {"epoch": 58, "iteration": 999},
+        "pretrained": {"epoch": 62, "iteration": 499},
         "mode": "train",  # dataset mode
         "dataset_index": [10, 11, 12, 13]  # index to inference
     },

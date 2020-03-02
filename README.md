@@ -20,6 +20,17 @@ python train.py
 ```
 
 ## StoryGAN Result
+- epoch: 59
+- iteration: 500
+- dataset mode: train
+
+#### Input description
+
+Dokyung is sitting on the chair.  Dokyung texted a message to Haeyoung1. Haeyoung1 made surprised Dokyung.
+
+#### Output
+Real Images: Randomly selected n-number of frames from scene
+Generated Images: Generated Images using Story GAN
 | Real Images | Generated Images |
 :-------------------------:|:-------------------------:
 <img src="./imgs/train_13_0_real.jpg" width="200"/> | <img src="./imgs/train_13_0_fake.jpg" width="200"/> 

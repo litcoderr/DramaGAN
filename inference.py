@@ -50,10 +50,14 @@ if __name__ == '__main__':
         video = video[0].permute(1, 0, 2, 3)  # [seq_length, 3, width, height]
 
         path, _, _ = gen_file_name(root, mode, dataset_index, 0)
-        if not os.path.exists(path):
-            os.makedirs(path, exist_ok=True)
-        else:
+
+        if os.path.exists(path):
             shutil.rmtree(path)
+        os.makedirs(path, exist_ok=True)
+
+        text_file_path = os.path.join(path, 'description.txt')
+        with open(text_file_path, 'w') as text_file:
+            text_file.write(text['description'])
 
         for frame_index in range(video.shape[0]):
             _, fake_image_path, real_image_path = gen_file_name(root, mode, dataset_index, frame_index)
