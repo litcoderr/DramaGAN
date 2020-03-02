@@ -65,7 +65,7 @@ class StoryGan(nn.Module):
         self.upblock6 = upSampleBlock(in_channel=latent_dim//32, out_channel=latent_dim//64)
         self.conv_block = nn.Sequential(
             nn.Conv2d(latent_dim//64, 3, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.Tanh()
+            nn.Sigmoid()
         )
 
     def desc_noise_filter(self, original_desc):

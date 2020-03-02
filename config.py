@@ -24,7 +24,13 @@ config = {
         "vid_loss_ratio": 1.0,  # video loss ratio
         "log_cycle": 10,  # train loss logging cycle
         "save_cycle": 500,  # saving model cycle
-        "load_pretrained": {"epoch": 35, "iteration": 999},  # loading pre-trained # None if train from beginning
+        "load_pretrained": {"epoch": 9, "iteration": 499},  # loading pre-trained # None if train from beginning
+    },
+    "inference_settings": {
+        "root": os.path.join(PROJECT_ROOT, 'result'),  # where results are stored
+        "pretrained": {"epoch": 58, "iteration": 999},
+        "mode": "train",  # dataset mode
+        "dataset_index": [10, 11, 12, 13]  # index to inference
     },
     "dataset": {
         "drama_dataset": {

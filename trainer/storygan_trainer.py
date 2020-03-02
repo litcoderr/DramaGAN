@@ -30,7 +30,7 @@ class ModelController:
         losses_path = os.path.join(path, "{}_{}_losses.json".format(epoch, iteration))
         return path, model_path, img_d_path, vid_d_path, losses_path
 
-    def load_model(self):
+    def load_model(self, pretrained_dict=None):
         before_epoch = 0
         before_step = -1
         model = StoryGan(self.config).to(self.config.train_settings.device)
@@ -38,9 +38,9 @@ class ModelController:
         vid_d = D_STY(config=self.config).to(self.config.train_settings.device)
 
         # load pretrained if needed and update epoch and step index
-        if self.config.train_settings.load_pretrained is not None:
-            desired_epoch = self.config.train_settings.load_pretrained["epoch"]
-            desired_iteration = self.config.train_settings.load_pretrained["iteration"]
+        if pretrained_dict is not None:
+            desired_epoch = pretrained_dict["epoch"]
+            desired_iteration = pretrained_dict["iteration"]
             path, model_path, img_d_path, vid_d_path, _ = self.gen_file_path(epoch=desired_epoch, iteration=desired_iteration)
             if os.path.exists(path):
                 model.load_state_dict(torch.load(model_path))
@@ -103,7 +103,7 @@ class StoryGanTrainer(Trainer):
 
         # Models
         self.model_controller = ModelController(self.config)
-        (self.model, self.img_d, self.vid_d), self.before_epoch, self.before_step = self.model_controller.load_model()
+        (self.model, self.img_d, self.vid_d), self.before_epoch, self.before_step = self.model_controller.load_model(self.config.train_settings.load_pretrained)
 
         # Optimizers
         self.img_d_optim = optim.Adam(self.img_d.parameters(), lr=self.config.train_settings.d_lr, betas=(0.5, 0.999))
