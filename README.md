@@ -29,7 +29,7 @@ python train.py
 Dokyung is sitting on the chair.  Dokyung texted a message to Haeyoung1. Haeyoung1 made surprised Dokyung.
 
 #### Output
-Real Images: Randomly selected n-number of frames from scene
+Real Images: Randomly selected n-number of frames from scene <br>
 Generated Images: Generated Images using Story GAN
 | Real Images | Generated Images |
 :-------------------------:|:-------------------------:
